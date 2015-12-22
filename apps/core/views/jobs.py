@@ -16,7 +16,7 @@ from taggit.models import Tag
 from apps.core.forms import FilterForm
 from apps.core.models import (RESULT_CHOICES, Author, CheckProgress, Event,
                               JobTemplate, Recipe, render_label)
-from apps.taskomatic.models import TaskPeriodSchedule
+from apps.taskomatic.models import TaskPeriod, TaskPeriodSchedule
 from apps.waiver.forms import WaiverForm
 from apps.waiver.models import Comment
 from base import create_matrix
@@ -164,6 +164,12 @@ class JobsListView(TemplateView):
             tag_query = map(lambda x: "%d" % int(x.id), jobstag)
             tag_query = """ AND "core_job"."template_id" IN ( %s ) """ % ", ".join(
                 tag_query)
+
+        # FIXME: workaround: only daily automation for now
+        period_id = TaskPeriod.objects.all().filter(label__startswith="daily")[0].id
+        # last run number
+        last_run = TaskPeriodSchedule.objects.all().filter(period = period_id).count()
+
         if self.filters.get('search'):
             # statistic information
             query = """SELECT date("core_job"."date") as job_date, "core_task"."result" as task_ressult, count("core_task"."result") from core_task
@@ -176,14 +182,18 @@ class JobsListView(TemplateView):
             cursor.execute(query,
                            [(datetime.now().date() - timedelta(days=14)).isoformat(), True, "%%%s%%" % self.filters.get('search')])
         else:
-            query = """SELECT date("core_job"."date") as job_date, "core_task"."result" as task_ressult, count("core_task"."result") from core_task
-               LEFT JOIN "core_recipe" ON ("core_task"."recipe_id" = "core_recipe"."id")
-               LEFT JOIN "core_job" ON ("core_recipe"."job_id" = "core_job"."id")
-               LEFT JOIN "core_jobtemplate" ON ("core_jobtemplate"."id" = "core_job"."template_id")
-               WHERE "core_job"."date" > %s AND "core_jobtemplate"."is_enable" = %s """ + tag_query + """
-               GROUP BY date("core_job"."date"), "core_task"."result" ORDER BY job_date ASC, task_ressult """
-            cursor.execute(query,
-                           [(datetime.now().date() - timedelta(days=14)).isoformat(), True])
+            query = """
+            SELECT taskomatic_taskperiodschedule.counter as run, core_task.result AS task_result, count(core_task.result)
+              FROM core_task
+              LEFT JOIN core_recipe ON core_task.recipe_id = core_recipe.id
+              LEFT JOIN core_job ON core_recipe.job_id = core_job.id
+              LEFT JOIN taskomatic_taskperiodschedule ON core_job.schedule_id = taskomatic_taskperiodschedule.id
+              WHERE taskomatic_taskperiodschedule.period_id = %s
+              AND taskomatic_taskperiodschedule.counter > %s
+              GROUP BY task_result, run
+              ORDER BY run;
+            """
+            cursor.execute(query, [period_id, last_run - 15])
 
         data = cursor.fetchall()
         label = OrderedDict()

@@ -6,7 +6,7 @@ var margin = {top: 20, right: 20, bottom: 30, left: 50},
 var parseDate = d3.time.format("%Y-%m-%d").parse,
     formatPercent = d3.format(".0%");
 
-var x = d3.time.scale()
+var x = d3.scale.linear()
     .range([0, width]);
 
 var y = d3.scale.linear()
@@ -47,7 +47,7 @@ if(url.indexOf("?") > 0){
 d3.tsv(url, function(error, data) {
   color.domain(d3.keys(data[0]).filter(function(key) { return key !== "date"; }));
   data.forEach(function(d) {
-    d.date = parseDate(d.date);
+    //d.date = parseDate(d.date);
   });
 
   var browsers = stack(color.domain().map(function(name) {
