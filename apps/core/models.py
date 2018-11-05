@@ -364,7 +364,7 @@ class Git(models.Model):
         if len(old_tests) > 0.5 * number_of_tests:
             self.__getLog().warning(
                 "Probably is there something wrong with repo '%s'!!!\n"
-                "We want tu deactivate more then 50% of tests. Skipped."
+                "We want tu deactivate more then 50%% of tests. Skipped."
                 % self.name)
         else:
             for test in old_tests:
