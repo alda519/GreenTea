@@ -39,7 +39,7 @@ tatal: {{ search.hits.total }}
       {% if it %}
       <td>{{ it.recipe.job.schedule }}</td>
       <td><a href="{{ it.task.test.get_absolute_url }}">...{{ it.task.test.name|slice:"-75:" }}</a></td>
-      <td><a href="https://{{ conf.BEAKER_SERVER }}/recipes/{{ it.task.recipe.uid }}#task{{it.task.uid}}" target="new" >R:{{ it.task.recipe.uid }}</a></td>
+      <td><a href="https://{{ conf.BEAKER_SERVER }}/recipes/{{ it.task.recipe.get_uid }}#task{{ it.task.get_uid }}" target="new" >{{ it.task.recipe.uid }}</a></td>
       <td>{{ it.task.datestart }}</td>
       <td><a class="octicon octicon-file-text openInModalWindow" href="{{ it.get_absolute_url }}"></a></td>
       {% else %}
